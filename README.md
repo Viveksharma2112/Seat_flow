@@ -1,162 +1,96 @@
-# SeatFlow
+## SeatFlow
 
-SeatFlow is a full-stack seat reservation and crowd management platform for libraries, study rooms, labs, and hostels. Students browse availability, reserve seats, and manage bookings. Administrators monitor usage, manage infrastructure, and view analytics.
+SeatFlow is a full-stack seat reservation and crowd management platform for libraries, study rooms, coworking spaces, labs, and hostels. Students can browse availability, reserve seats, check in/out, and view booking history. Admins can manage seats, floors, sections, users, and view analytics.
 
-## Architecture
+### Key Features
+- JWT authentication (login/registration)
+- Browse and filter seats
+- Real-time seat availability
+- Reservation lifecycle (reserve, check-in, check-out)
+- Booking history and reservation status
+- Admin: manage seats, floors, sections, users, and analytics
 
-```
-┌─────────────┐     REST/JSON      ┌─────────────┐     Mongoose     ┌──────────────┐
-│   React     │ ◄───────────────► │   Express   │ ◄──────────────► │ MongoDB Atlas│
-│  (Vercel)   │      JWT Auth      │   (Render)  │                  │              │
-└─────────────┘                    └─────────────┘                  └──────────────┘
-```
+## Tech Stack
+- Frontend: React, Vite, Tailwind CSS
+- Backend: Node.js, Express, JWT, bcrypt, node-cron
+- Database: MongoDB Atlas + Mongoose
 
-- **Frontend:** React, React Router, Axios, Context API, Tailwind CSS
-- **Backend:** Node.js, Express.js, JWT, bcrypt, node-cron
-- **Database:** MongoDB Atlas with Mongoose
-
-Business logic lives in backend services. Controllers stay thin. Atomic reservation updates prevent double booking. A waiting queue assigns seats when they become available. Cron runs every 5 minutes to expire stale reservations.
-
-## Folder structure
+## Project Structure
 
 ```
 seatflow/
-├── backend/
-│   ├── config/          # DB and env configuration
-│   ├── controllers/     # Route handlers
-│   ├── middleware/      # Auth, validation, errors
-│   ├── models/          # Mongoose schemas
-│   ├── routes/          # REST route definitions
-│   ├── services/        # Business logic
-│   ├── utils/           # Helpers, validators, seed
-│   ├── app.js
-│   └── server.js
-├── frontend/
-│   └── src/
-│       ├── components/  # Reusable UI
-│       ├── context/     # Auth state
-│       ├── hooks/       # Custom hooks
-│       ├── layouts/     # Page shells
-│       ├── pages/       # Route views
-│       └── services/    # API client
+├── backend/        # API, controllers, services, models
+├── frontend/       # React app (Vite + Tailwind)
 └── README.md
-```
-
-## Environment variables
-
-### Backend (`backend/.env`)
-
-| Variable | Description |
-|----------|-------------|
-| `PORT` | API port (default `5000`) |
-| `MONGODB_URI` | MongoDB Atlas connection string |
-| `JWT_SECRET` | Secret for signing tokens (32+ chars) |
-| `JWT_EXPIRES_IN` | Token lifetime (e.g. `7d`) |
-| `CLIENT_URL` | Frontend origin for CORS |
-| `NODE_ENV` | `development` or `production` |
-
-### Frontend (`frontend/.env`)
-
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_URL` | Backend API base URL (e.g. `http://localhost:5000/api`) |
-
-Copy example files:
-
-```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
 ```
 
 ## Installation
 
-### Prerequisites
+Prerequisites: Node.js 18+, MongoDB Atlas (or local MongoDB)
 
-- Node.js 18+
-- MongoDB Atlas cluster
+1. Clone repository
 
-### Backend
+```bash
+git clone https://github.com/Viveksharma2112/Seat_flow.git
+cd seatflow
+```
+
+2. Backend
 
 ```bash
 cd backend
 npm install
-npm run seed    # optional: demo data
+cp .env.example .env
+# edit backend/.env with your Mongo URI and JWT secret
 npm run dev
 ```
 
-### Frontend
+3. Frontend
 
 ```bash
 cd frontend
 npm install
+cp .env.example .env
+# edit frontend/.env if needed (VITE_API_URL)
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+## Environment Variables
 
-### Seed credentials
+Create `backend/.env` with at least:
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@seatflow.com | admin123 |
-| Student | student@seatflow.com | student123 |
+```
+PORT=5000
+MONGO_URI=your_mongo_uri
+JWT_SECRET=your_jwt_secret
+CLIENT_URL=http://localhost:5173
+```
 
-## API overview
+Create `frontend/.env` with `VITE_API_URL` pointing to backend API.
 
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| POST | `/api/auth/register` | Public |
-| POST | `/api/auth/login` | Public |
-| GET | `/api/seats` | Auth |
-| POST | `/api/reservations` | Student |
-| GET | `/api/analytics/admin` | Admin |
-| GET | `/api/analytics/student` | Student |
+## Seed Data (optional)
 
-List endpoints support `page`, `limit`, `search`, `sortBy`, and `order` query params.
+From the `backend` folder:
 
-## Deployment
+```bash
+npm run seed
+```
 
-### MongoDB Atlas
+This generates demo users and seats for development/testing.
 
-1. Create a free cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas).
-2. Create a database user with read/write access.
-3. Allow network access (for Render, use `0.0.0.0/0` or Render outbound IPs).
-4. Copy the connection string and replace `<password>` with your user password.
-5. Set the database name to `seatflow` in the URI.
+## API Endpoints (high-level)
 
-### Render (backend)
+- POST /api/auth/register
+- POST /api/auth/login
+- GET /api/auth/me
+- GET /api/seats
+- POST /api/seats
+- PUT /api/seats/:id
+- POST /api/reservations
+- GET /api/reservations/me
 
-1. Push the repo to GitHub.
-2. In Render, create a **Web Service** linked to the repo.
-3. Settings:
-   - **Root directory:** `backend`
-   - **Build command:** `npm install`
-   - **Start command:** `npm start`
-   - **Environment:** Node
-4. Add environment variables from `backend/.env.example`.
-5. Set `CLIENT_URL` to your Vercel frontend URL.
-6. Deploy and note the service URL (e.g. `https://seatflow-api.onrender.com`).
-
-### Vercel (frontend)
-
-1. Import the GitHub repo in Vercel.
-2. Settings:
-   - **Root directory:** `frontend`
-   - **Framework preset:** Vite
-   - **Build command:** `npm run build`
-   - **Output directory:** `dist`
-3. Add environment variable:
-   - `VITE_API_URL` = `https://your-render-service.onrender.com/api`
-4. Deploy.
-5. Update Render `CLIENT_URL` to match the Vercel URL if needed.
-
-## Development notes
-
-- Reservations use MongoDB transactions (requires Atlas replica set).
-- Expired reservations are released every 5 minutes via node-cron.
-- When a seat opens, the next user in the wait queue is auto-assigned.
-- Public registration always creates Student accounts; use seed or manual DB update for admins.
+## Resolving the merge
+This commit resolves an unmerged state for `README.md` by combining and cleaning both incoming versions into a single unified README. If you'd prefer to keep a different README variant, tell me and I can update it.
 
 ## License
-
 MIT
